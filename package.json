@@ -1,20 +1,16 @@
 {
-  "name": "image-generator",
+  "name": "dkon-proxy",
   "version": "1.0.0",
-  "description": "A simple image generator using Vercel and canvas",
+  "description": "A proxy server for Dalam Kontak",
   "main": "api/proxy.js",
   "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'No build step defined'", 
-    "start": "vercel start"
+    "start": "node api/proxy.js"
   },
   "dependencies": {
-    "sharp": "^0.30.0",
-    "node-fetch": "^2.6.1",
-    "canvas-prebuilt": "^2.8.0"
+    "express": "^4.17.1",
+    "axios": "^0.21.1"
   },
   "engines": {
-    "node": "22.x"
-  },
-  "license": "MIT"
+    "node": "20.x"
+  }
 }

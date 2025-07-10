@@ -1,44 +1,42 @@
-export default async function handler(req, res) {
-  const targetUrl = 'https://api.dkon.app' + req.url; // Сохраняем исходный путь и параметры запроса
-  const { method, headers, body } = req;
+const express = require('express');
+const axios = require('axios');
+const qs = require('qs'); // Импортируем библиотеку qs для сериализации
 
-  // Удаляем заголовки, которые могут раскрыть информацию о Vercel
-  delete headers['host'];
-  delete headers['connection'];
-  delete headers['accept-encoding']; //  Удаляем Accept-Encoding чтобы избежать проблем с gzip/deflate
+const app = express();
 
-  try {
-    const response = await fetch(targetUrl, {
-      method,
-      headers,
-      body,
-      redirect: 'manual' // Важно для проксирования редиректов
-    });
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-    // Копируем заголовки из ответа и отправляем их клиенту
-    response.headers.forEach((value, key) => {
-      res.setHeader(key, value);
-    });
+app.all('*', async (req, res) => {
+    const url = `https://api.dkon.app${req.originalUrl}`;
 
-    // Удаляем заголовки, которые могут раскрыть информацию о mysite.ru
-    res.removeHeader('server');
-    res.removeHeader('x-powered-by');
+    try {
+        const response = await axios({
+            method: req.method, // Используем метод запроса клиента
+            url: url,
+            headers: {
+                ...req.headers,
+                host: 'api.dkon.app',
+                'Content-Type': 'application/x-www-form-urlencoded' // Устанавливаем заголовок Content-Type
+            },
+            data: req.method === 'POST' ? qs.stringify(req.body) : undefined, // Сериализуем тело для POST-запросов
+            responseType: 'arraybuffer' 
+        });
 
+        // Устанавливаем заголовки ответа
+        Object.entries(response.headers).forEach(([key, value]) => {
+            res.setHeader(key, value);
+        });
 
-    // Отправляем тело ответа клиенту
-    const responseBody = await response.text(); // Или response.json() если API возвращает JSON
-    res.status(response.status).send(responseBody);
+        // Отправляем ответ клиенту
+        res.status(response.status).send(response.data);
+    } catch (error) {
+        console.error('Error occurred:', error.response ? error.response.data : error.message);
+        res.status(error.response ? error.response.status : 500).send({
+            message: error.message,
+            details: error.response ? error.response.data : 'No additional details'
+        });
+    }
+});
 
-  } catch (error) {
-    console.error(error);
-    res.status(500).send(`Proxy error: ${error.message}`);
-  }
-}
-
-//  Отключаем парсинг тела запроса, чтобы можно было передавать любые данные
-export const config = {
-  api: {
-    bodyParser: false,
-    externalResolver: true,
-  },
-}
+module.exports = app;
