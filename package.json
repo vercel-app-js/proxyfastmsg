@@ -2,7 +2,7 @@
   "name": "image-generator",
   "version": "1.0.0",
   "description": "A simple image generator using Vercel and canvas",
-  "main": "api/generateBanner.js",
+  "main": "api/proxy.js",
   "scripts": {
     "dev": "vercel dev",
     "build": "echo 'No build step defined'", 
